@@ -1,30 +1,44 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
-
-
 
 const BarkSchema = new mongoose.Schema({
-  content: {
-    type: String,
-    required: true,
-  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  rebarks: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-  ],
+  content: {
+    type: String,
+    required: true,
+    maxlength: 280, // character limit for Barks
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  likes: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    },
+  ],
+  comments: [
+    {
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+      content: {
+        type: String,
+        required: true,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
 });
 
-
 module.exports = mongoose.model('Bark', BarkSchema);
-

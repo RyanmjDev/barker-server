@@ -2,20 +2,30 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const User = require('./models/User');
 
 const passport = require('passport');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const cookieParser = require('cookie-parser');
+const User = require('./models/User'); 
 
+
+const JwtStrategy = require('passport-jwt').Strategy;
+const ExtractJwt = require('passport-jwt').ExtractJwt;
 
 
 require('./config/passport')(passport);
 
-
-
 dotenv.config();
+
+
+const opts = {
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: process.env.SECRET_KEY, 
+};
+
+
+
 
 const app = express();
 
@@ -29,6 +39,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(cookieParser());
+
+
+passport.use(
+  new JwtStrategy(opts, async (jwt_payload, done) => {
+    try {
+      const user = await User.findById(jwt_payload.id);
+      if (user) {
+        return done(null, user);
+      } else {
+        return done(null, false);
+      }
+    } catch (error) {
+      return done(error, false);
+    }
+  })
+);
+
+
 
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB connected'))
