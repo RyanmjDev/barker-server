@@ -1,20 +1,43 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const passportLocalMongoose = require('passport-local-mongoose');
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const passportLocalMongoose = require("passport-local-mongoose");
 const Schema = mongoose.Schema;
 
-
 const UserSchema = new Schema({
-  username: { type: String, required: true, unique: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  barks: [{ type: Schema.Types.ObjectId, ref: 'Bark' }]
+  username: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  email:  { 
+    type: String, 
+    required: true, 
+    unique: true 
+  },
+  password: {
+     type: String, 
+     required: true 
+    },
+  profile: {
+    type: String
+  },
+  barks: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "Bark",
+    },
+  ],
+
+  likedBarks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bark",
+    },
+  ],
 });
 
-
-
-UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+UserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
     return next();
   }
 
@@ -27,8 +50,6 @@ UserSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-
 UserSchema.plugin(passportLocalMongoose);
 
-module.exports = mongoose.model('User', UserSchema);
-
+module.exports = mongoose.model("User", UserSchema);

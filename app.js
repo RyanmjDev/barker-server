@@ -84,7 +84,7 @@ app.use(
 
 
 
-
+ 
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -94,6 +94,9 @@ app.use('/api/barks', barkRoutes);
 
 const userRoutes = require('./routes/users');
 app.use('/api/users', userRoutes);
+
+const notificationRoutes = require('./routes/notificationRoutes');
+app.use('/api/notifications', notificationRoutes);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
