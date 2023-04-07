@@ -27,7 +27,18 @@ const UserSchema = new Schema({
       ref: "Bark",
     },
   ],
-
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+    following: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   likedBarks: [
     {
       type: mongoose.Schema.Types.ObjectId,

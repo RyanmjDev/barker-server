@@ -118,8 +118,32 @@ exports.getBarkById = async (req, res) => {
     if (!bark) {
       return res.status(404).json({ message: 'Bark not found' });
     }
+              console.log("this one")
+if (req.headers.authorization) {
+  
+  console.log("THIS one")
+      const token = req.headers.authorization.split(" ")[1];
+    if (token) {
+      try {
+        const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+        const userId = decodedToken.id;
 
+        if (userId) {
+
+           const user = await User.findById(userId);
+           const isLikedByUser = user.likedBarks.includes(barkId);
+           const barkWithLikes = {...bark._doc, isLikedByUser};
+           res.status(200).json(barkWithLikes);
+        }
+      } catch (error)
+      {
+        console.error('Error with token:', error);
+        res.status(500).json({ message: 'Error with token:' });
+      }
+    }
+  } else {
     res.json(bark);
+  }
   } catch (error) {
     console.error('Error fetching bark by ID:', error);
     res.status(500).json({ message: 'Error fetching bark by ID' });
