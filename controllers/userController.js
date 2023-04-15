@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const Bark = require ("../models/bark")
+const Bark = require ("../models/bark");
 const generateToken = require("../utils/generateToken");
 const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
@@ -20,6 +20,8 @@ exports.getUser = async (req, res) => {
     res.status(500).json({ message: "Error fetching user" });
   }
 };
+
+
 
 exports.getProfile = async (req, res) => {
   try {
@@ -121,6 +123,8 @@ exports.follow = async (req, res) => {
       targetUser.followers.push(currentUser._id);
     }
 
+
+
     await currentUser.save();
     await targetUser.save();
 
@@ -128,6 +132,35 @@ exports.follow = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
+  }
+}
+
+exports.getNotifications = async (req, res) => {
+  try {
+  const token = req.headers.authorization.split(" ")[1];
+  const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
+  const userId = decodedToken.id;
+
+  const user = await User.findById(userId)
+  .populate({
+    path: "notifications.relatedBark",
+    model: "Bark",
+    select: "content createdAt"
+  })
+  .populate({
+    path: "notifications.fromUser",
+    model: "User",
+    select: "username",
+  })
+  .exec();
+
+  if(!user) {
+    return res.status(404).json({message: "User Not found"})
+  }
+  res.status(200).json(user.notifications)
+  } catch(error) {
+    console.error("Error getting Notifications", error);
+    res.status(500).json({message: "Error getting notifications"})
   }
 }
 

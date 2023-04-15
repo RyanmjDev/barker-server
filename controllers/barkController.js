@@ -94,13 +94,25 @@ exports.postReply = async (req, res) => {
 exports.getReplies = async (req, res) => {
   try {
     const parentBarkId = req.params.barkId;
-    const parentBark = await Bark.findById(parentBarkId).populate('replies');
+    const parentBark = await Bark.findById(parentBarkId)
+    .populate('replies')
+    .populate('user', 'username')
+    .exec();
+    
 
     if (!parentBark) {
       return res.status(404).json({ message: 'Bark not found' });
     }
 
-    res.status(200).json(parentBark.replies);
+    // Take populate replies and populates the username field on them...
+    const populatedReplies = await Promise.all(
+      parentBark.replies.map(async (reply) => {
+        return await Bark.populate(reply, { path: 'user', select: 'username' });
+      })
+    );
+
+
+    res.status(200).json(populatedReplies);
   } catch (error) {
     console.error('Error fetching replies:', error);
     res.status(500).json({ message: 'Error fetching replies' });
@@ -118,10 +130,9 @@ exports.getBarkById = async (req, res) => {
     if (!bark) {
       return res.status(404).json({ message: 'Bark not found' });
     }
-              console.log("this one")
+   
 if (req.headers.authorization) {
   
-  console.log("THIS one")
       const token = req.headers.authorization.split(" ")[1];
     if (token) {
       try {
@@ -174,8 +185,19 @@ exports.likeBark = async (req, res) => {
 
     if (likeIndex === -1) {
       // If a bark isn't liked, like it
+      const barkOwner = await User.findById(bark.user); // Find the owner of bark to push a notification
+
+      const notification = {
+        type: "like",
+        relatedBark: barkId,
+        fromUser: userId,
+      };
+
       bark.likes.push({ user: userId });
       user.likedBarks.push(bark);
+      barkOwner.notifications.push(notification);
+      await barkOwner.save();
+      
     } else {
       // If has already been liked, unlike it
       const barkIndex = user.likedBarks.findIndex((likedBark) => likedBark._id.toString() === barkId);
@@ -187,7 +209,8 @@ exports.likeBark = async (req, res) => {
       bark.likes.splice(likeIndex, 1);
     }
 
-     await user.save();
+
+    await user.save();
     await bark.save();
     res.status(200).json(bark);
 

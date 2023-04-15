@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const passportLocalMongoose = require("passport-local-mongoose");
+const notification = require("./notification");
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
@@ -45,6 +46,32 @@ const UserSchema = new Schema({
       ref: "Bark",
     },
   ],
+  notifications: [
+    {
+      type: {
+        type: String,
+        enum: ["like", "reply", "rebark", "follow"],
+        required: true,
+      },
+      fromUser: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+      relatedBark: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Bark",
+      },
+      read: {
+        type: Boolean,
+        default: false,
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+  ],
+
 });
 
 UserSchema.pre("save", async function (next) {
