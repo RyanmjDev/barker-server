@@ -46,31 +46,7 @@ const UserSchema = new Schema({
       ref: "Bark",
     },
   ],
-  notifications: [
-    {
-      type: {
-        type: String,
-        enum: ["like", "reply", "rebark", "follow"],
-        required: true,
-      },
-      fromUser: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-      relatedBark: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Bark",
-      },
-      read: {
-        type: Boolean,
-        default: false,
-      },
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
-    },
-  ],
+  
 
 });
 
@@ -87,6 +63,7 @@ UserSchema.pre("save", async function (next) {
 UserSchema.methods.comparePassword = function (password) {
   return bcrypt.compare(password, this.password);
 };
+
 
 UserSchema.plugin(passportLocalMongoose);
 

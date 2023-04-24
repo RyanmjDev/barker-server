@@ -3,6 +3,8 @@ const User = require('mongoose').model('User');
 const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
 
+const Notification = require("../models/notification");
+
 
 
 exports.getAllBarks = async (req, res) => {
@@ -78,10 +80,24 @@ exports.postReply = async (req, res) => {
       content,
     });
 
+
+
     await reply.save();
 
     parentBark.replies.push(reply);
     await parentBark.save();
+
+    const barkOwner = await User.findById(bark.user); // Find the owner of the bark to send them a notification
+
+    const replyNotification = new Notification({
+      user: barkOwner._id,
+      type: 'reply',
+      relatedBark: barkId,
+      relatedReply: newReply._id, // Store the ID of the reply
+      fromUser: userId, // The user who created the reply
+    });
+
+    await replyNotification.save();
 
     res.status(201).json(reply);
   } catch (error) {
@@ -167,59 +183,86 @@ if (req.headers.authorization) {
 exports.likeBark = async (req, res) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
+    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
     const userId = decodedToken.id;
 
     const barkId = req.params.barkId;
 
     const bark = await Bark.findById(barkId);
-    if(!bark) {
-      return res.status(404).json({message: 'Bark not found'});
+    if (!bark) {
+      return res.status(404).json({ message: 'Bark not found' });
     }
 
     const likeIndex = bark.likes.findIndex((like) => like.user.toString() === userId);
-
-
     const user = await User.findById(userId);
+
+    const barkOwner = await User.findById(bark.user); // Find the owner of the bark
+
+    const existingNotification = await Notification.findOne({
+      user: barkOwner._id,
+      type: 'like',
+      relatedBark: barkId,
+    });
 
 
     if (likeIndex === -1) {
       // If a bark isn't liked, like it
-      const barkOwner = await User.findById(bark.user); // Find the owner of bark to push a notification
 
-      const notification = {
-        type: "like",
-        relatedBark: barkId,
-        fromUser: userId,
-      };
+      if (existingNotification) {
+        // If an existing like notification is found, update it
+        existingNotification.fromUser = userId;
+        existingNotification.read = false;
+        existingNotification.engagements.likes += 1;
+        await existingNotification.save();
+      } else {
+        // Create a new notification
+        const notification = new Notification({
+          user: barkOwner._id,
+          type: 'like',
+          relatedBark: barkId,
+          fromUser: userId,
+          engagements: {
+            likes: 1,
+          },
+        });
+
+        await notification.save();
+      }
 
       bark.likes.push({ user: userId });
       user.likedBarks.push(bark);
-      barkOwner.notifications.push(notification);
-      await barkOwner.save();
-      
     } else {
       // If has already been liked, unlike it
       const barkIndex = user.likedBarks.findIndex((likedBark) => likedBark._id.toString() === barkId);
       if (barkIndex !== -1) {
         user.likedBarks.splice(barkIndex, 1);
       }
-      
+
       // Remove the like from the bark.likes array
       bark.likes.splice(likeIndex, 1);
+
+      // Remove the notification that was sent
+
+      if (existingNotification) {
+        existingNotification.engagements.likes -= 1;
+        if (existingNotification.engagements.likes <= 0) {
+          // Remove the notification from the database
+          await existingNotification.deleteOne();
+        } else {
+          // Save the updated notification
+          await existingNotification.save();
+        }
+      }
     }
-
-
     await user.save();
     await bark.save();
     res.status(200).json(bark);
-
-
-  } catch(error) {
+  } catch (error) {
     console.error('Error liking bark:', error);
-    res.status(500).json({ message: 'Error liking bar', error });
+    res.status(500).json({ message: 'Error liking bark', error });
   }
-}
+};
+
 
 exports.deleteBark = async (req, res) => {
   const { barkId } = req.params;

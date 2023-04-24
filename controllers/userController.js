@@ -3,6 +3,8 @@ const Bark = require ("../models/bark");
 const generateToken = require("../utils/generateToken");
 const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
+const Notification = require("../models/notification");
+
 
 exports.getUser = async (req, res) => {
   try {
@@ -141,23 +143,20 @@ exports.getNotifications = async (req, res) => {
   const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
   const userId = decodedToken.id;
 
-  const user = await User.findById(userId)
-  .populate({
-    path: "notifications.relatedBark",
-    model: "Bark",
-    select: "content createdAt"
-  })
-  .populate({
-    path: "notifications.fromUser",
-    model: "User",
-    select: "username",
-  })
-  .exec();
 
-  if(!user) {
-    return res.status(404).json({message: "User Not found"})
-  }
-  res.status(200).json(user.notifications)
+  const notifications = await Notification.find({ user: userId })
+  .sort({ createdAt: -1 })
+  .populate("fromUser", "username")
+  .populate({
+    path: "relatedBark",
+    populate: { path: "user", select: "username" },
+  });
+
+
+   if(!notifications) {
+     return res.status(404).json({message: "User Not found"})
+   }
+  res.status(200).json(notifications)
   } catch(error) {
     console.error("Error getting Notifications", error);
     res.status(500).json({message: "Error getting notifications"})
