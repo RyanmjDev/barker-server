@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const Notification = require("../models/notification");
 
-
+const {socketHandler, getConnectedUsers} = require('../handlers/socketHandler');
 
 exports.getAllBarks = async (req, res) => {
   try {
@@ -180,7 +180,7 @@ if (req.headers.authorization) {
 
 
 
-exports.likeBark = async (req, res) => {
+exports.likeBark = async (req, res, io) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
     const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
@@ -204,6 +204,8 @@ exports.likeBark = async (req, res) => {
       relatedBark: barkId,
     });
 
+    const connectedUsers = getConnectedUsers();
+    console.log("connectedUsers:", connectedUsers);
 
     if (likeIndex === -1) {
       // If a bark isn't liked, like it
@@ -227,6 +229,17 @@ exports.likeBark = async (req, res) => {
         });
 
         await notification.save();
+        // Import the io instance here
+        const socketConfig = require('../socketConfig');
+        const io = socketConfig.getIo();
+
+        // Emit the notification
+        if( connectedUsers[barkOwner.username])
+        {
+          const barkOwnerSocketId = connectedUsers[barkOwner.username];
+          console.log("barkOwner socketId:", barkOwnerSocketId);
+          io.to(connectedUsers[barkOwner.username]).emit('newNotification', notification);
+        }
       }
 
       bark.likes.push({ user: userId });
@@ -251,6 +264,18 @@ exports.likeBark = async (req, res) => {
         } else {
           // Save the updated notification
           await existingNotification.save();
+                  // Import the io instance here
+        const socketConfig = require('../socketConfig');
+        const io = socketConfig.getIo();
+
+        // Emit the notification
+        
+        if( connectedUsers[barkOwner.username])
+        {
+          const barkOwnerSocketId = connectedUsers[barkOwner.username];
+          console.log("barkOwner socketId:", barkOwnerSocketId);
+          io.to(connectedUsers[barkOwner.username]).emit('newNotification', notification);
+        }
         }
       }
     }

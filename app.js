@@ -1,7 +1,9 @@
 const express = require('express');
+const app = express();
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+dotenv.config();
 
 const passport = require('passport');
 const session = require('express-session');
@@ -12,11 +14,18 @@ const User = require('./models/User');
 
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
+const server = require('http').createServer(app);
+const { socketHandler } = require('./handlers/socketHandler');
 
+//Routes
+const barkRoutes = require('./routes/barkRoutes');
+const userRoutes = require('./routes/users');
+const notificationRoutes = require('./routes/notificationRoutes');
+const socketConfig = require('./socketConfig');
 
 require('./config/passport')(passport);
 
-dotenv.config();
+
 
 
 const opts = {
@@ -25,9 +34,20 @@ const opts = {
 };
 
 
+const io = socketConfig.init(server);
+// const io = require('socket.io')(server, {
+//   cors: {
+//     origin: "*", // For now, this should let anywhere be the origin. CHANGE THIS EVENTUALLY!
+//     methods: ["GET", "POST"],
+//   },
+// });
+
+io.on('connection', (socket) => {
+  socketHandler(io, socket);
+});
 
 
-const app = express();
+
 
 const corsOptions = {
   origin: 'http://localhost:5173',
@@ -89,14 +109,20 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-const barkRoutes = require('./routes/barkRoutes');
+
+
+//Routes
 app.use('/api/barks', barkRoutes);
-
-const userRoutes = require('./routes/users');
 app.use('/api/users', userRoutes);
-
-const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/notifications', notificationRoutes);
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+//app.listen(port, () => console.log(`Server running on port ${port}`));
+
+
+
+
+server.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
