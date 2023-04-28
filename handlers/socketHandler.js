@@ -18,6 +18,8 @@ const socketHandler =  (io, socket) => {
         const initialUnreadCount = await Notification.countDocuments({ user: user._id, read: false });
         unreadNotificationCounts[username] = initialUnreadCount; 
         
+        socket.emit('updateUnreadCount', initialUnreadCount); // sends the initial unreadcount
+        
         connectedUsers[username] = socket.id;
         console.log(`User ${username} joined with socket ID: ${socket.id}`);
       }

@@ -34,6 +34,8 @@ exports.getNotifications = async (req, res) => {
   }
 }
 
+
+
 // Mark a notification as read
 exports.markAsRead = async (req, res) => {
   try {

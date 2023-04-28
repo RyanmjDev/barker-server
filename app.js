@@ -19,7 +19,7 @@ const { socketHandler } = require('./handlers/socketHandler');
 
 //Routes
 const barkRoutes = require('./routes/barkRoutes');
-const userRoutes = require('./routes/users');
+const userRoutes = require('./routes/userRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const socketConfig = require('./socketConfig');
 
@@ -35,12 +35,7 @@ const opts = {
 
 
 const io = socketConfig.init(server);
-// const io = require('socket.io')(server, {
-//   cors: {
-//     origin: "*", // For now, this should let anywhere be the origin. CHANGE THIS EVENTUALLY!
-//     methods: ["GET", "POST"],
-//   },
-// });
+
 
 io.on('connection', (socket) => {
   socketHandler(io, socket);
