@@ -4,13 +4,13 @@ const Bark = require ("../models/bark");
 const generateToken = require("../utils/generateToken");
 const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
+const getUserId = require('../utils/getUserId');
+
 
 // Get notifications for a user
 exports.getNotifications = async (req, res) => {
   try {
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
-  const userId = decodedToken.id;
+    const userId = getUserId(req.headers.authorization)
 
 
   const notifications = await Notification.find({ user: userId })

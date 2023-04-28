@@ -5,7 +5,11 @@ const jwt = require('jsonwebtoken');
 
 const Notification = require("../models/notification");
 
+const handleNotification = require('../handlers/handleNotification');
 const {socketHandler, unreadNotificationCounts,  getConnectedUsers} = require('../handlers/socketHandler');
+const getUserId = require('../utils/getUserId');
+
+
 
 exports.getAllBarks = async (req, res) => {
   try {
@@ -179,12 +183,13 @@ if (req.headers.authorization) {
 
 
 
-
-exports.likeBark = async (req, res, io) => {
+exports.likeBark = async (req, res) => {
   try {
-    const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    const userId = decodedToken.id;
+    // const token = req.headers.authorization.split(" ")[1];
+    // const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
+    // const userId = decodedToken.id;
+
+    const userId = getUserId(req.headers.authorization)
 
     const barkId = req.params.barkId;
 
@@ -196,98 +201,33 @@ exports.likeBark = async (req, res, io) => {
     const likeIndex = bark.likes.findIndex((like) => like.user.toString() === userId);
     const user = await User.findById(userId);
 
-    const barkOwner = await User.findById(bark.user); // Find the owner of the bark
-
-    const existingNotification = await Notification.findOne({
-      user: barkOwner._id,
-      type: 'like',
-      relatedBark: barkId,
-    });
+    const barkOwner = await User.findById(bark.user);
 
     const connectedUsers = getConnectedUsers();
-    console.log("connectedUsers:", connectedUsers);
+    console.log("connectedUsers:", connectedUsers); // Get rid of this later
 
     if (likeIndex === -1) {
       // If a bark isn't liked, like it
-
-      if (existingNotification) {
-        // If an existing like notification is found, update it
-        existingNotification.fromUser = userId;
-        existingNotification.read = false;
-        existingNotification.engagements.likes += 1;
-        await existingNotification.save();
-      } else {
-        // Create a new notification
-        const notification = new Notification({
-          user: barkOwner._id,
-          type: 'like',
-          relatedBark: barkId,
-          fromUser: userId,
-          engagements: {
-            likes: 1,
-          },
-        });
-
-        await notification.save();
-        // Import the io instance here
-        const socketConfig = require('../socketConfig');
-        const io = socketConfig.getIo();
-
-        // Emit the notification
-        if( connectedUsers[barkOwner.username])
-        {
-          const barkOwnerSocketId = connectedUsers[barkOwner.username];
-          unreadNotificationCounts[barkOwner.username]++;
-          console.log("barkOwner socketId:", barkOwnerSocketId);
-          io.to(barkOwnerSocketId).emit('updateUnreadCount', unreadNotificationCounts[barkOwner.username]);
-        }
-      }
-
       bark.likes.push({ user: userId });
       user.likedBarks.push(bark);
+      await handleNotification(userId, barkId, barkOwner, 'like', connectedUsers);
     } else {
       // If has already been liked, unlike it
       const barkIndex = user.likedBarks.findIndex((likedBark) => likedBark._id.toString() === barkId);
       if (barkIndex !== -1) {
         user.likedBarks.splice(barkIndex, 1);
       }
-
-      // Remove the like from the bark.likes array
       bark.likes.splice(likeIndex, 1);
- 
-
-      // Remove the notification that was sent
-
-      if (existingNotification) {
-        existingNotification.engagements.likes -= 1;
-        if (existingNotification.engagements.likes <= 0) {
-          // Remove the notification from the database
-          await existingNotification.deleteOne();
-        } else {
-          // Save the updated notification
-          await existingNotification.save();
-                  // Import the io instance here
-        const socketConfig = require('../socketConfig');
-        const io = socketConfig.getIo();
-
-        // Emit the notification
-        
-        if( connectedUsers[barkOwner.username])
-        {
-          const barkOwnerSocketId = connectedUsers[barkOwner.username];
-          console.log("barkOwner socketId:", barkOwnerSocketId);
-          io.to(connectedUsers[barkOwner.username]).emit('updateUnreadCount', notification);
-        }
-        }
-      }
+      await handleNotification(userId, barkId, barkOwner, 'unlike', connectedUsers);
     }
+
     await user.save();
     await bark.save();
     res.status(200).json(bark);
-  } catch (error) {
+    } catch (error) {
     console.error('Error liking bark:', error);
     res.status(500).json({ message: 'Error liking bark', error });
-  }
+    }
 };
 
 

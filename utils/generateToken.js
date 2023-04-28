@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.SECRET_KEY;
-function generateToken(user) {
+const generateToken = (user) => {
   const payload = {
     id: user._id,
     username: user.username,

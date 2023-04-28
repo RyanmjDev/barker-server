@@ -1,17 +1,17 @@
 const User = require("../models/User");
 const Bark = require ("../models/bark");
 const generateToken = require("../utils/generateToken");
-const parseUserId = require("../utils/parseToken");
+//const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
 const Notification = require("../models/notification");
+
+const getUserId = require('../utils/getUserId');
 
 
 exports.getUser = async (req, res) => {
   try {
 
-      const authHeader = req.headers["authorization"];
-      const token = authHeader && authHeader.split(" ")[1];
-      const userId = parseUserId(token);
+    const userId = getUserId(req.headers.authorization)
 
     if (userId) {
       const { username } = await User.findById(userId);
@@ -102,9 +102,7 @@ exports.getAllUserLikes = async (req, res) => {
 exports.follow = async (req, res) => {
   try {
 
-    const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
-    const userId = decodedToken.id;
+    const userId = getUserId(req.headers.authorization)
 
     const username = req.params.username;
 
@@ -139,10 +137,7 @@ exports.follow = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-  const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token,  process.env.SECRET_KEY);
-  const userId = decodedToken.id;
-
+    const userId = getUserId(req.headers.authorization)
 
   const notifications = await Notification.find({ user: userId })
   .sort({ createdAt: -1 })
