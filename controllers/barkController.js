@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 
 const Notification = require("../models/notification");
 
-const {socketHandler, getConnectedUsers} = require('../handlers/socketHandler');
+const {socketHandler, unreadNotificationCounts,  getConnectedUsers} = require('../handlers/socketHandler');
 
 exports.getAllBarks = async (req, res) => {
   try {
@@ -237,8 +237,9 @@ exports.likeBark = async (req, res, io) => {
         if( connectedUsers[barkOwner.username])
         {
           const barkOwnerSocketId = connectedUsers[barkOwner.username];
+          unreadNotificationCounts[barkOwner.username]++;
           console.log("barkOwner socketId:", barkOwnerSocketId);
-          io.to(connectedUsers[barkOwner.username]).emit('newNotification', notification);
+          io.to(barkOwnerSocketId).emit('updateUnreadCount', unreadNotificationCounts[barkOwner.username]);
         }
       }
 
@@ -253,6 +254,7 @@ exports.likeBark = async (req, res, io) => {
 
       // Remove the like from the bark.likes array
       bark.likes.splice(likeIndex, 1);
+ 
 
       // Remove the notification that was sent
 
@@ -274,7 +276,7 @@ exports.likeBark = async (req, res, io) => {
         {
           const barkOwnerSocketId = connectedUsers[barkOwner.username];
           console.log("barkOwner socketId:", barkOwnerSocketId);
-          io.to(connectedUsers[barkOwner.username]).emit('newNotification', notification);
+          io.to(connectedUsers[barkOwner.username]).emit('updateUnreadCount', notification);
         }
         }
       }
