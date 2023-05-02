@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const { getNotifications, markAsRead } = require('../controllers/notificationController');
+const { getNotifications, markAllAsRead } = require('../controllers/notificationController');
 
 
 router.get('/', passport.authenticate('jwt', { session: false }), getNotifications);
-router.patch('/:id/read', passport.authenticate('jwt', { session: false }), markAsRead);
+router.post("/readAll", passport.authenticate('jwt', { session: false }), markAllAsRead);
 
 module.exports = router;

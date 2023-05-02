@@ -53,10 +53,16 @@ exports.createBark = async (req, res) => {
     const newBark = new Bark({
       user: req.user._id,
       content: req.body.content,
-    });
+    })
 
     const savedBark = await newBark.save();
-    res.json(savedBark);
+
+    const populatedBark = await Bark.findById(savedBark._id).populate({
+      path: 'user',
+      select: 'username',
+    });
+
+    res.json(populatedBark);
   } catch (error) {
     console.error('Error creating bark:', error);
     res.status(500).json({ message: 'Error creating bark' });
@@ -82,6 +88,7 @@ exports.postReply = async (req, res) => {
     const reply = new Bark({
       user: userId,
       content,
+      parentBark: parentBarkId
     });
 
 
@@ -91,17 +98,17 @@ exports.postReply = async (req, res) => {
     parentBark.replies.push(reply);
     await parentBark.save();
 
-    const barkOwner = await User.findById(bark.user); // Find the owner of the bark to send them a notification
+    const barkOwner = await User.findById(parentBark.user); // Find the owner of the bark to send them a notification
 
-    const replyNotification = new Notification({
-      user: barkOwner._id,
-      type: 'reply',
-      relatedBark: barkId,
-      relatedReply: newReply._id, // Store the ID of the reply
-      fromUser: userId, // The user who created the reply
-    });
+    // const replyNotification = new Notification({
+    //   user: barkOwner._id,
+    //   type: 'reply',
+    //   relatedBark: parentBarkId,
+    //   relatedReply: newReply._id, // Store the ID of the reply
+    //   fromUser: userId, // The user who created the reply
+    // });
 
-    await replyNotification.save();
+    // await replyNotification.save();
 
     res.status(201).json(reply);
   } catch (error) {
@@ -185,9 +192,6 @@ if (req.headers.authorization) {
 
 exports.likeBark = async (req, res) => {
   try {
-    // const token = req.headers.authorization.split(" ")[1];
-    // const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-    // const userId = decodedToken.id;
 
     const userId = getUserId(req.headers.authorization)
 
