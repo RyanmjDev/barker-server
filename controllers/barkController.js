@@ -13,7 +13,7 @@ const getUserId = require('../utils/getUserId');
 
 exports.getAllBarks = async (req, res) => {
   try {
-    const barks = await Bark.find().sort({ createdAt: -1 }).populate('user', 'username');
+    const barks = await Bark.find().sort({ createdAt: -1 }).populate('user', 'username displayName');
 
     // Check if the token exists
     if (req.headers.authorization) {
@@ -59,7 +59,7 @@ exports.createBark = async (req, res) => {
 
     const populatedBark = await Bark.findById(savedBark._id).populate({
       path: 'user',
-      select: 'username',
+      select: 'username displayName',
     });
 
     res.json(populatedBark);
@@ -123,7 +123,7 @@ exports.getReplies = async (req, res) => {
     const parentBarkId = req.params.barkId;
     const parentBark = await Bark.findById(parentBarkId)
     .populate('replies')
-    .populate('user', 'username')
+    .populate('user', 'username displayName')
     .exec();
     
 
@@ -134,7 +134,7 @@ exports.getReplies = async (req, res) => {
     // Take populate replies and populates the username field on them...
     const populatedReplies = await Promise.all(
       parentBark.replies.map(async (reply) => {
-        return await Bark.populate(reply, { path: 'user', select: 'username' });
+        return await Bark.populate(reply, { path: 'user', select: 'username displayName' });
       })
     );
 
@@ -151,7 +151,7 @@ exports.getBarkById = async (req, res) => {
   try {
     const barkId = req.params.barkId;
     const bark = await Bark.findById(barkId)
-    .populate('user', 'username') 
+    .populate('user', 'username displayName') 
     .exec();
 
     if (!bark) {

@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const Bark = require ("../models/bark");
 const generateToken = require("../utils/generateToken");
-//const parseUserId = require("../utils/parseToken");
 const jwt = require('jsonwebtoken');
 const Notification = require("../models/notification");
 
@@ -14,8 +13,8 @@ exports.getUser = async (req, res) => {
     const userId = getUserId(req.headers.authorization)
 
     if (userId) {
-      const { username } = await User.findById(userId);
-      res.json(username);
+      const { username, displayName } = await User.findById(userId);
+      res.json({username, displayName});
     }
   } catch (err) {
     console.error("Error fetching user:", err);
@@ -29,7 +28,7 @@ exports.getProfile = async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ username });
-    const {profile} = user;
+    const {profile, displayName} = user;
     const followers = user.followers.length;
     const following = user.following.length;
     let isFollowing = false;
@@ -52,7 +51,7 @@ exports.getProfile = async (req, res) => {
     }
 
 
-    res.status(200).json({profile, username, followers, following, isFollowing});
+    res.status(200).json({profile, displayName, username, followers, following, isFollowing, });
   } catch (error) {
     console.error("Error fetching user profile:", error);
     res.status(500).json({ message: "Error fetching user profile!" });
@@ -68,7 +67,7 @@ exports.getAllUserBarks = async (req, res) => {
       return res.status(404).json({ message: "User not found!" });
     }
 
-    const barks = await Bark.find({ user: user._id }).sort({ createdAt: -1 }).populate('user', 'username');
+    const barks = await Bark.find({ user: user._id }).sort({ createdAt: -1 }).populate('user', 'username displayName');
 
     
     res.status(200).json(barks);
@@ -86,7 +85,7 @@ exports.getAllUserLikes = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const likedBarks = await Bark.find({ _id: { $in: user.likedBarks } }).populate('user', 'username')
+    const likedBarks = await Bark.find({ _id: { $in: user.likedBarks } }).populate('user', 'username displayName')
       .sort({ createdAt: -1 });
 
       console.log(likedBarks) 
