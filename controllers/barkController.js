@@ -8,12 +8,21 @@ const Notification = require("../models/notification");
 const handleNotification = require('../handlers/handleNotification');
 const {socketHandler, unreadNotificationCounts,  getConnectedUsers} = require('../handlers/socketHandler');
 const getUserId = require('../utils/getUserId');
+const barksPageLimit = require('../utils/barksPageLimit')
 
 
 
 exports.getAllBarks = async (req, res) => {
   try {
-    const barks = await Bark.find().sort({ createdAt: -1 }).populate('user', 'username displayName');
+
+    const page = parseInt(req.query.page) || 1;
+
+    const barks = await Bark.find()
+    .sort({ createdAt: -1 })
+    .populate('user', 'username displayName')
+    .skip((page - 1) * barksPageLimit)
+    .limit(barksPageLimit)
+    .exec();
 
     // Check if the token exists
     if (req.headers.authorization) {
@@ -120,10 +129,14 @@ exports.postReply = async (req, res) => {
 
 exports.getReplies = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+
     const parentBarkId = req.params.barkId;
     const parentBark = await Bark.findById(parentBarkId)
     .populate('replies')
     .populate('user', 'username displayName')
+    .skip((page - 1) * barksPageLimit)
+    .limit(barksPageLimit)
     .exec();
     
 

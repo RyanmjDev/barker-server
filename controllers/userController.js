@@ -6,6 +6,7 @@ const Notification = require("../models/notification");
 
 const getUserId = require('../utils/getUserId');
 
+const barksPageLimit = require('../utils/barksPageLimit')
 
 exports.getUser = async (req, res) => {
   try {
@@ -60,6 +61,7 @@ exports.getProfile = async (req, res) => {
 
 exports.getAllUserBarks = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
     const { username } = req.params;
     const user = await User.findOne({ username });
 
@@ -67,7 +69,13 @@ exports.getAllUserBarks = async (req, res) => {
       return res.status(404).json({ message: "User not found!" });
     }
 
-    const barks = await Bark.find({ user: user._id }).sort({ createdAt: -1 }).populate('user', 'username displayName');
+
+    const barks = await Bark.find({ user: user._id })
+    .sort({ createdAt: -1 })
+    .populate('user', 'username displayName')
+    .skip((page - 1) * barksPageLimit)
+    .limit(barksPageLimit)
+    .exec();
 
     
     res.status(200).json(barks);
@@ -79,16 +87,18 @@ exports.getAllUserBarks = async (req, res) => {
 
 exports.getAllUserLikes = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
     const user = await User.findOne({ username: req.params.username });
-
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
-    }
+    } 
 
-    const likedBarks = await Bark.find({ _id: { $in: user.likedBarks } }).populate('user', 'username displayName')
-      .sort({ createdAt: -1 });
-
-      console.log(likedBarks) 
+    const likedBarks = await Bark.find({ _id: { $in: user.likedBarks } })
+    .populate('user', 'username displayName')
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * barksPageLimit)
+    .limit(barksPageLimit)
+    .exec();
 
 
     res.status(200).json(likedBarks);
