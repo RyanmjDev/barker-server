@@ -1,7 +1,7 @@
 
 const jwt = require('jsonwebtoken');
 
-// Determines how many barks are loaded per page
+// Determines how many barks are loaded per page. Eventually, this value shouldn't be hardcoded. 
 exports.barksPageLimit = 20;
 
 exports.getUserIdFromToken = (token) => {

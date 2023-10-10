@@ -24,3 +24,20 @@ exports.getAllBarks = async (page, token) => {
   }
   return barks;
 };
+
+exports.createBark = async(userId, content) => {
+  try {
+    const newBark = new Bark({
+      user: userId,
+      content: content,
+    });
+    const savedBark = await newBark.save();
+    return await Bark.findById(savedBark._id).populate({
+      path: 'user',
+      select: 'username displayName',
+    });
+  } catch (error) {
+    console.error('Error creating bark:', error);
+    throw error;
+  }
+};

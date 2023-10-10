@@ -30,25 +30,15 @@ exports.getAllBarks = async (req, res) => {
 
 exports.createBark = async (req, res) => {
   try {
-
-    const newBark = new Bark({
-      user: req.user._id,
-      content: req.body.content,
-    })
-
-    const savedBark = await newBark.save();
-
-    const populatedBark = await Bark.findById(savedBark._id).populate({
-      path: 'user',
-      select: 'username displayName',
-    });
-
-    res.json(populatedBark);
+    const newBark = await barkService.createBark(req.user._id, req.body.content);
+    res.json(newBark);
   } catch (error) {
     console.error('Error creating bark:', error);
     res.status(500).json({ message: 'Error creating bark' });
   }
 };
+
+
 
 exports.postReply = async (req, res) => {
   try {
