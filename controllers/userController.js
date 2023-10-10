@@ -6,7 +6,7 @@ const Notification = require("../models/notification");
 
 const getUserId = require('../utils/getUserId');
 
-const barksPageLimit = require('../utils/barksPageLimit')
+const {barksPageLimit} = require('../utils/barkUtils')
 
 exports.getUser = async (req, res) => {
   try {

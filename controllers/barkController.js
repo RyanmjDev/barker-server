@@ -8,52 +8,24 @@ const Notification = require("../models/notification");
 const handleNotification = require('../handlers/handleNotification');
 const {socketHandler, unreadNotificationCounts,  getConnectedUsers} = require('../handlers/socketHandler');
 const getUserId = require('../utils/getUserId');
-const barksPageLimit = require('../utils/barksPageLimit')
+const barksPageLimit = require('../utils/barkUtils')
 
+const barkService = require('../services/barkService');
+const authUtils = require('../utils/authUtils');
 
 
 exports.getAllBarks = async (req, res) => {
   try {
-
     const page = parseInt(req.query.page) || 1;
-
-    const barks = await Bark.find()
-    .sort({ createdAt: -1 })
-    .populate('user', 'username displayName')
-    .skip((page - 1) * barksPageLimit)
-    .limit(barksPageLimit)
-    .exec();
-
-    // Check if the token exists
-    if (req.headers.authorization) {
-      const token = req.headers.authorization.split(" ")[1];
-
-      if (token) {
-        try {
-          const decodedToken = jwt.verify(token, process.env.SECRET_KEY);
-          const userId = decodedToken.id;
-
-          if (userId) {
-            const user = await User.findById(userId);
-            const barksWithUserLikes = barks.map((bark) => {
-              const isLikedByUser = user.likedBarks.includes(bark._id);
-              return { ...bark._doc, isLikedByUser };
-            });
-            return res.status(200).json(barksWithUserLikes);
-          }
-        } catch (error) {
-          console.error('Error decoding token:', error);
-          // Continue without user-specific data if the token is invalid
-        }
-      }
-    } 
-
+    const token = authUtils.getTokenFromHeaders(req.headers.authorization);
+    const barks = await barkService.getAllBarks(page, token);
     res.status(200).json(barks);
   } catch (error) {
     console.error('Error fetching barks:', error);
     res.status(500).json({ message: 'Error fetching barks' });
   }
 };
+
 
 
 exports.createBark = async (req, res) => {
@@ -273,7 +245,3 @@ exports.deleteBark = async (req, res) => {
   }
 };
 
-// module.exports = {
-//   getAllBarks,  createBark, deleteBark, getBarkById,
-//   likeBark
-// };
