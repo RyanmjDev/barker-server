@@ -17,6 +17,7 @@ exports.getUserIdFromToken = (token) => {
 exports.mapBarksWithUserLikes = (barks, user) => {
   return barks.map((bark) => {
     const isLikedByUser = user.likedBarks.includes(bark._id);
-    return { ...bark._doc, isLikedByUser };
+    const isBookmarkedByUser = user.bookmarks.includes(bark._id);
+    return { ...bark._doc, isLikedByUser, isBookmarkedByUser  };
   });
 };

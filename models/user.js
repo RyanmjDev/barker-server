@@ -50,7 +50,12 @@ const UserSchema = new Schema({
       ref: "Bark",
     },
   ],
-  
+  bookmarks: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Bark",
+    },
+  ],
 
 });
 

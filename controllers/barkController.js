@@ -95,6 +95,18 @@ exports.likeBark = async (req, res) => {
   }
 };
 
+exports.bookmarkBark = async (req, res) => {
+  try {
+    const userId = getUserId(req.headers.authorization);
+    const bark = await barkService.bookmarkBark(req.params.barkId, userId);
+    res.status(200).json(bark);
+  } catch (error)
+  {
+    console.error('Error bookmarking bark:', error);
+    res.status(500).json({ message: 'Error bookmarking bark', error });
+  }
+}
+
 exports.deleteBark = async (req, res) => {
   try {
     await barkService.deleteBark(req.params.barkId, req.user._id);

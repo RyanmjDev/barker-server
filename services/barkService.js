@@ -137,6 +137,35 @@ exports.likeBark = async (barkId, userId) => {
   }
 };
 
+exports.bookmarkBark = async (barkId, userId) => {
+  try {
+      const bark = await Bark.findById(barkId);
+      if (!bark) throw new Error('Bark not found');
+
+      const user = await User.findById(userId);
+      const bookmarkIndex = user.bookmarks.findIndex((bookmark) => bookmark.equals(bark._id)); // Check if User has already bookmarked this
+
+      if (bookmarkIndex !== -1) {
+        // If the bark is already bookmarked, remove it
+        console.log(`UNbookmarked barkID: ${bark}`)
+        user.bookmarks.splice(bookmarkIndex, 1);
+      } else {
+        // If the bark is not bookmarked, add it
+        user.bookmarks.push(bark);
+        console.log(`Successfully bookmarked barkID: ${bark}`)
+      }
+
+      await user.save();
+      return bark;
+
+
+  }
+  catch (error){
+    console.error('error bookmarking/unbookmarking bark!', error)
+    throw error;
+  }
+}
+
 exports.deleteBark = async (barkId, userId) => {
   try {
     const bark = await Bark.findById(barkId);
