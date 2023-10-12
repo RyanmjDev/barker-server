@@ -22,8 +22,6 @@ exports.getNotifications = async (req, res) => {
   })
   .populate({ path: 'relatedReply' });
 
-
-
    if(!notifications) {
      return res.status(404).json({message: "User Not found"})
    }
