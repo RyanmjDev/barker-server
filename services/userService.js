@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const generateToken = require("../utils/generateToken");
 const Notification = require("../models/notification");
 const { barksPageLimit } = require('../utils/barkUtils');
+const { getallUserBookmarks } = require("../controllers/userController");
 
 exports.getUserById = async (userId) => {
     const { username, displayName } = await User.findById(userId);
@@ -50,6 +51,19 @@ exports.getAllUserLikesByUsername = async (username, page) => {
         .limit(barksPageLimit)
         .exec();
 };
+
+exports.getAllUserBookmarks = async (username, page) => {
+    const user = await User.findOne({ username });
+    if (!user) throw new Error('User not found');
+
+    return await Bark.find({ _id: { $in: user.bookmarks } })
+        .populate('user', 'username displayName')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * barksPageLimit)
+        .limit(barksPageLimit)
+        .exec();
+}
+
 
 exports.toggleFollow = async (userId, username) => {
     const targetUser = await User.findOne({ username });
