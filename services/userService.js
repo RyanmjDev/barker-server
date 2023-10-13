@@ -52,8 +52,8 @@ exports.getAllUserLikesByUsername = async (username, page) => {
         .exec();
 };
 
-exports.getAllUserBookmarks = async (username, page) => {
-    const user = await User.findOne({ username });
+exports.getAllUserBookmarks = async (userId, page) => {
+    const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
     return await Bark.find({ _id: { $in: user.bookmarks } })
@@ -63,7 +63,6 @@ exports.getAllUserBookmarks = async (username, page) => {
         .limit(barksPageLimit)
         .exec();
 }
-
 
 exports.toggleFollow = async (userId, username) => {
     const targetUser = await User.findOne({ username });

@@ -58,8 +58,8 @@ exports.getAllUserLikes = async (req, res) => {
 exports.getAllUserBookmarks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const bookmarks = await userService.getAllUserBookmarks(req.params.username, page)
-    console.log(`HIT ROUTE! Here's the Bookmarks: ${bookmarks}`)
+    const userId = req.user.id
+    const bookmarks = await userService.getAllUserBookmarks(userId, page);
     res.status(200).json(bookmarks);
   } catch (error) {
     console.error("Error fetching user bookmarks:", error);
