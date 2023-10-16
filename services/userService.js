@@ -6,6 +6,8 @@ const Notification = require("../models/notification");
 const { barksPageLimit } = require('../utils/barkUtils');
 const { getallUserBookmarks } = require("../controllers/userController");
 
+const barkUtils = require('../utils/barkUtils');
+
 exports.getUserById = async (userId) => {
     const { username, displayName } = await User.findById(userId);
     return { username, displayName };
@@ -56,12 +58,14 @@ exports.getAllUserBookmarks = async (userId, page) => {
     const user = await User.findById(userId);
     if (!user) throw new Error('User not found');
 
-    return await Bark.find({ _id: { $in: user.bookmarks } })
+    const barks = await Bark.find({ _id: { $in: user.bookmarks } })
         .populate('user', 'username displayName')
         .sort({ createdAt: -1 })
         .skip((page - 1) * barksPageLimit)
         .limit(barksPageLimit)
         .exec();
+
+         return barkUtils.mapBarksWithUserLikes(barks, user);
 }
 
 exports.toggleFollow = async (userId, username) => {
